@@ -5,131 +5,54 @@
  */
 package ie3100m;
 
-import Logic.BinStatsCalculator;
-import Logic.PackingConfigCalculator;
-import Logic.Solver;
-import Model.Stats.BinStats;
-import Model.Product.Level2_Box;
-import Model.Product.Level3_Bin;
 import Model.Order;
+import Model.Product.Level3_Bin;
 import Model.Stats.PackingConfig;
-import Model.Stats.RankSystem;
-import Utils.FileUtils;
-import ilog.concert.IloException;
-import java.io.File;
+import Utils.BinScanner;
+import Utils.OrderScanner;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
- * @author Kevin-Notebook
+ * @author elbat
  */
 public class Main {
-
-    public static final double MAX_WEIGHT = 30;
-
-    public static void main(String[] args) {
-        /**
-         * TODO: put order stats as input
-         */
-        int numOrderedBox = 1000;
-        Level2_Box box = new Level2_Box(190, 186, 23, 0.06);
-        Order order = new Order(box, numOrderedBox); //in mm and g
-
-        ArrayList<Level3_Bin> binList = new ArrayList<>();
-
-        ArrayList<BinStats> allBinStats = new ArrayList<>();
-        ArrayList<PackingConfig> configs = new ArrayList<>();
-        
+        public static void main(String[] args) {
+        ArrayList<Order> orderList = new ArrayList<>();
         try {
-            binList = FileUtils.loadBinTypes("boxes.csv");
+            orderList = OrderScanner.loadOrders("orders.csv");
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
-
         
-
-        for (Level3_Bin bin : binList) {
-            allBinStats.add(new BinStats(box, bin));
-        }
-        BinStatsCalculator.setStatsForAllBins(allBinStats);
-
-        for (BinStats binStat : allBinStats) {
-            if (binStat.getTotalQuantity() > 0) {
-                configs.add(new PackingConfig(order, binStat));
-            }
-        }
-        PackingConfigCalculator.setAllConfigs(configs, allBinStats);
+        ArrayList<PackingConfig> orderPacks = new ArrayList<>();
         
-        ArrayList<PackingConfig> binsByNumbers = new ArrayList<>(configs);
-        ArrayList<PackingConfig> binsByVolume = new ArrayList<>(configs);
-
-        PackingConfig bestConfig = determineBestConfig(binsByNumbers, binsByVolume);
-
-        if (bestConfig == null) {
-            System.out.println("No suitable config found");
-        } else {
-            System.out.println("Chosen config:");
-            System.out.println(bestConfig);
-        }
-
-    }
-
-    /**
-     * Determine the best packing configuration based on the sorting order
-     *
-     * @param packingConfigs the array of possible packing configurations
-     * @return the most desired packing configuration
-     */
-    private static PackingConfig determineBestConfig(ArrayList<PackingConfig> binsByNumbers, ArrayList<PackingConfig> binsByVolume) {
-        System.out.println("testing inside determine");
-        Collections.sort(binsByNumbers, (a, b) -> {
-            if (a.getTotalBinsInclRemainder() == b.getTotalBinsInclRemainder()) {
-                return a.getTotalEmptyVol() <= b.getTotalEmptyVol() ? -1 : 1;
-            } else {
-                return a.getTotalBinsInclRemainder() - b.getTotalBinsInclRemainder();
-            }
+        /*
+        1. Scan in list of orders
+        2. Send order 1 by 1 into Orderpacker
+        3. Orderpacker tell me the PackingConfig to use
+        4. From all PackingConfig, find utilization rate of all bins
+        */
+        
+        orderList.stream().forEach((order) -> {
+            orderPacks.add(OrderPacker.packOrder(order));
         });
-
-        Collections.sort(binsByVolume, (a, b) -> {
-            if (a.getMainBinStats().getEmptyVolume() == b.getMainBinStats().getEmptyVolume()) {
-                return a.getTotalBinsInclRemainder() <= b.getTotalBinsInclRemainder() ? -1 : 1;
-            } else {
-                return a.getMainBinStats().getEmptyVolume() - b.getMainBinStats().getEmptyVolume();
-            }
-        });
-        System.out.println("sorted 2 arrays by num and vol");
-        int rankPoints;
-        ArrayList<RankSystem> rankBins = new ArrayList<>();
-
-        for (int i = 0; i < binsByNumbers.size(); i++) {
-            for (int j = 0; j < binsByVolume.size(); j++) {
-                if (binsByNumbers.get(i).getMainBinStats().getBin().getName() == binsByVolume.get(j).getMainBinStats().getBin().getName()) {
-                    rankPoints = i + j;
-                    RankSystem rank = new RankSystem(binsByVolume.get(j), i, j, rankPoints);
-                    rankBins.add(rank);
-                }
-            }
-
-        }
-        Collections.sort(rankBins);
         
+        ArrayList<Level3_Bin> binList = new ArrayList<>();
+        try {
+            binList = BinScanner.loadBinTypes("bins.csv");
+        } catch (IOException ex) {
+            Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
-        for (RankSystem rank : rankBins) {
-            System.out.println(rank.toString());
+        ArrayList<BinAnalysis> bins = new ArrayList<>();
+        
+        for (Level3_Bin bin: binList) {
+            for (PackingConfig order: orderPacks) {
+            }
         }
-        for (RankSystem rank : rankBins) {
-            if (rank.getConfig().getMainBinStats().getTotalQuantity() != 1) {
-                return rank.getConfig();
-            }            
-        }
-        return null;
-    }
-
-    private static int calcUpperBound(Level2_Box box, Level3_Bin bin) {
-        return bin.getBaseArea() / box.getBaseArea();
     }
 }

@@ -24,12 +24,28 @@ public class Level2_Box {
         this.name = "";
     }
     
+    public Level2_Box(String name, int height, int length, int width, double weight){
+        this.length = length;
+        this.width = width;
+        this.height = height;
+        this.weight = weight;
+        this.name = name;
+    }
+    
     public Level2_Box(int length, int width, int height, double weight, String name) {
         this.length = length;
         this.width = width;
         this.height = height;
         this.weight = weight;
         this.name = name;
+    }
+    
+    public Level2_Box(Level2_Box box){
+        this.length = box.getLength();
+        this.width = box.getWidth();
+        this.height = box.getHeight();
+        this.weight = box.getWeight();
+        this.name = box.getName();
     }
     
     public int getLength() {
