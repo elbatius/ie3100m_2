@@ -7,7 +7,6 @@ package ie3100m;
 
 import Logic.BinStatsCalculator;
 import Logic.PackingConfigCalculator;
-import Logic.Solver;
 import Model.Stats.BinStats;
 import Model.Product.Level2_Box;
 import Model.Product.Level3_Bin;
@@ -15,8 +14,6 @@ import Model.Order;
 import Model.Stats.PackingConfig;
 import Model.Stats.RankSystem;
 import Utils.BinScanner;
-import ilog.concert.IloException;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,12 +63,12 @@ public class OrderPacker {
 
         PackingConfig bestConfig = determineBestConfig(binsByNumbers, binsByVolume);
 
-        if (bestConfig == null) {
-            System.out.println("No suitable config found");
-        } else {
-            System.out.println("Chosen config:");
-            System.out.println(bestConfig);
-        }
+//        if (bestConfig == null) {
+//            System.out.println("No suitable config found");
+//        } else {
+//            System.out.println("Chosen config:");
+//            System.out.println(bestConfig);
+//        }
         return bestConfig;
     }
 
@@ -82,7 +79,7 @@ public class OrderPacker {
      * @return the most desired packing configuration
      */
     private static PackingConfig determineBestConfig(ArrayList<PackingConfig> binsByNumbers, ArrayList<PackingConfig> binsByVolume) {
-        System.out.println("testing inside determine");
+//        System.out.println("testing inside determine");
         Collections.sort(binsByNumbers, (a, b) -> {
             if (a.getTotalBinsInclRemainder() == b.getTotalBinsInclRemainder()) {
                 return a.getTotalEmptyVol() <= b.getTotalEmptyVol() ? -1 : 1;
@@ -98,7 +95,7 @@ public class OrderPacker {
                 return a.getMainBinStats().getEmptyVolume() - b.getMainBinStats().getEmptyVolume();
             }
         });
-        System.out.println("sorted 2 arrays by num and vol");
+//        System.out.println("sorted 2 arrays by num and vol");
         int rankPoints;
         ArrayList<RankSystem> rankBins = new ArrayList<>();
 
@@ -115,9 +112,9 @@ public class OrderPacker {
         Collections.sort(rankBins);
         
         
-        for (RankSystem rank : rankBins) {
-            System.out.println(rank.toString());
-        }
+//        for (RankSystem rank : rankBins) {
+//            System.out.println(rank.toString());
+//        }
         for (RankSystem rank : rankBins) {
             if (rank.getConfig().getMainBinStats().getTotalQuantity() != 1) {
                 return rank.getConfig();
