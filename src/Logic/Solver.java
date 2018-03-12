@@ -12,6 +12,8 @@ import Model.Product.Level3_Bin;
 
 import ilog.concert.*; //model
 import ilog.cplex.*; //algo
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -30,9 +32,26 @@ public class Solver {
     private int boxVolume;
     private int binVolumes;
     
+    public Solver() {
+        try {
+            this.cplex = new IloCplex();
+        } catch (IloException ex) {
+            Logger.getLogger(Solver.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     public Solver(Level2_Box box, int n, Level3_Bin bin) throws IloException {
         this.cplex = new IloCplex();
         
+        this.box = box;
+        this.bin = bin;
+        this.n = n;
+        
+        this.boxVolume = box.getVolume();
+        this.binVolumes = bin.getVolume();
+    }
+    
+    public void update(Level2_Box box, int n, Level3_Bin bin){
         this.box = box;
         this.bin = bin;
         this.n = n;

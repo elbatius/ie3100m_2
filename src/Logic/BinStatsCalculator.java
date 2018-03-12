@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  */
 public class BinStatsCalculator {
     public static double MAX_WEIGHT = 30;
+    public static Solver solver = new Solver();
     
     public void setWeight(double maxWeight) {
         MAX_WEIGHT = maxWeight;
@@ -49,7 +50,7 @@ public class BinStatsCalculator {
         Level2_Box box = binStats.getBox();
         Level3_Bin bin = binStats.getBin();
         
-        Solver solver = new Solver(box, calcUpperBound(box, bin), bin);
+        solver.update(box, calcUpperBound(box, bin), bin);
         
         int quantityPerLayer = solver.optimize(false);
         int totalQuantity = quantityPerLayer * (bin.getHeight() / box.getHeight());

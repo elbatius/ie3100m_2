@@ -33,6 +33,9 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         
+        int numOfOrders = 0;
+        numOfOrders = orderList.size();
+        
         ArrayList<Level3_Bin> binList = new ArrayList<>();
         
         try {
@@ -46,26 +49,37 @@ public class Main {
         /*
         orderPacks have configured packs inside. 
         */
-        int j = 0;
-        orderList.stream().forEach((order) -> {
-            orderPacks.add(OrderPacker.packOrder(order));
-            
-            System.out.println("config done");
-        });
-            System.out.println("all config done");
-        
         HashMap<String, Integer> binMap = new HashMap<String, Integer>();
         
         for (Level3_Bin bin: binList) {
             binMap.put(bin.getName(), 0);
         }
-        int i = 0;
-        for (PackingConfig config: orderPacks) {
+        
+        int j = 0;
+        for (Order order: orderList) {
+            PackingConfig config = OrderPacker.packOrder(order);
             String key = config.getMainBinStats().getBin().getName();
             binMap.put(key, binMap.get(key)+1);
-            i++;
-            System.out.println("mapping done up till n = " + i);
+            System.out.println(j);
+            j++;
         }
+        
+//        orderList.stream().forEach((order) -> {
+//            PackingConfig config = OrderPacker.packOrder(order);
+//            String key = config.getMainBinStats().getBin().getName();
+//            binMap.put(key, binMap.get(key)+1);
+//        });
+        System.out.println("all config done");
+        
+        for (Level3_Bin bin: binList) {
+            int count = binMap.get(bin.getName());
+            String binName = bin.getName();
+            float rate = (count * 100.0f)/numOfOrders;
+//            System.out.println("count for " + binName + ": " + count);
+            System.out.println("utilization rate for " + binName + ": " + rate);
+        }
+        
+        
         
         
         
