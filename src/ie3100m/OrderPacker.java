@@ -17,6 +17,7 @@ import Utils.BinScanner;
 import ilog.concert.IloException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,21 +38,14 @@ public class OrderPacker {
         Level2_Box box = new Level2_Box(order.getBox());
 //        Order order = new Order(box, numOrderedBox); //in mm and g
 
-        ArrayList<Level3_Bin> binList = new ArrayList<>();
         ArrayList<BinStats> allBinStats = new ArrayList<>();
         ArrayList<PackingConfig> configs = new ArrayList<>();
         
-        try {
-            binList = BinScanner.loadBinTypes("bins.csv");
-            BinStatsCalculator.initComponents(binList);
-            BinStatsCalculator.updateBox(box);
-        } catch (IOException ex) {
-            Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IloException ex) {
-            Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        BinStatsCalculator.updateBox(box);
         
         BinStatsCalculator.setStatsForAllBins();
+        
+        allBinStats.addAll(Arrays.asList(BinStatsCalculator.getBinStats()));
 
         for (BinStats binStat : allBinStats) {
             if (binStat.getTotalQuantity() > 0) {

@@ -83,6 +83,10 @@ public class BinStatsCalculator {
         return;
     }
     
+    public static BinStats[] getBinStats() {
+        return binStats;
+    }
+    
     private static int calcUpperBound(Level2_Box box, Level3_Bin bin) {
         return bin.getBaseArea() / box.getBaseArea();
     }

@@ -5,12 +5,14 @@
  */
 package ie3100m;
 
+import Logic.BinStatsCalculator;
 import Model.Order;
 import Model.Product.Level3_Bin;
 import Model.Stats.BinStats;
 import Model.Stats.PackingConfig;
 import Utils.BinScanner;
 import Utils.OrderScanner;
+import ilog.concert.IloException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,8 +42,11 @@ public class Main {
         
         try {
             binList = BinScanner.loadBinTypes("bins.csv");
+            BinStatsCalculator.initComponents(binList);
         } catch (IOException ex) {
             Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IloException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         ArrayList<PackingConfig> orderPacks = new ArrayList<>();
