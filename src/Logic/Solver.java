@@ -12,6 +12,7 @@ import Model.Product.Level3_Bin;
 
 import ilog.concert.*; //model
 import ilog.cplex.*; //algo
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,28 @@ public class Solver {
     private int boxVolume;
     private int binVolumes;
     
+    //variables
+    private IloIntVar[] P;
+
+    //coordinates
+    private IloIntVar[] x; //x_i
+    private IloIntVar[] y; //y_i
+
+    //orientation
+    private IloIntVar[][] leftOf; //a_ik
+    private IloIntVar[][] frontOf; //c_ik
+
+    //alignment
+    private IloIntVar[] isHorizontal; //l_xi
+    
+    private IloObjective objective;
+    
+    private IloConstraint[] boxConstraints;
+    private IloConstraint[] comparingConstraints;
+    private IloConstraint totalBoxConstraint;
+    private IloConstraint[] binConstraints;
+    private IloConstraint weightConstraint;
+    
     public Solver() {
         try {
             this.cplex = new IloCplex();
@@ -51,80 +74,46 @@ public class Solver {
         this.binVolumes = bin.getVolume();
     }
     
-    public void update(Level2_Box box, int n, Level3_Bin bin){
-        this.box = box;
+    public Solver(Level3_Bin bin) throws IloException {
+        this.cplex = new IloCplex();
+        
         this.bin = bin;
+        
+        this.binVolumes = bin.getVolume();
+    }
+    
+    public void update(Level2_Box box, int n) throws IloException {
+        this.box = box;
         this.n = n;
         
-        this.boxVolume = box.getVolume();
-        this.binVolumes = bin.getVolume();
+        initVariables();
     }
     
     public int optimize(boolean output) throws IloException {
         if (!output) {
             cplex.setOut(null);
         }
-        
-        //variables
-        IloIntVar[] P = cplex.boolVarArray(n);
-        
-        //coordinates
-        IloIntVar[] x = cplex.intVarArray(n, 0, Integer.MAX_VALUE); //x_i
-        IloIntVar[] y = cplex.intVarArray(n, 0, Integer.MAX_VALUE); //y_i
-        
-        //orientation
-        IloIntVar[][] leftOf = new IloIntVar[n][n]; //a_ik
-        IloIntVar[][] frontOf = new IloIntVar[n][n]; //c_ik
-        
-        for (int i = 0; i < n; i++) {
-            leftOf[i] = cplex.boolVarArray(n);
-            frontOf[i] = cplex.boolVarArray(n);
-        }
-        
-        //alignment
-        IloIntVar[] isHorizontal = cplex.boolVarArray(n); //l_xi
 
-        //define objective
-        IloIntExpr objective = cplex.sum(P);
-        cplex.addMaximize(objective);
+        objective = defineObjective();
         
         //constraints
         //Lvl 2 box spatial constraints
-        for (int i = 0; i < n; i++) {
-            for (int k = 0; k < n; k++) {
-                if (i == k) continue;
-                cplex.addLe(cplex.sum(x[i], cplex.prod(box.getLength(), isHorizontal[i]), cplex.prod(box.getWidth(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))),
-                        cplex.sum(x[k], cplex.prod(M, cplex.sum(1, cplex.prod(-1, leftOf[i][k]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[k])))));
-                cplex.addLe(cplex.sum(y[i], cplex.prod(box.getWidth(), isHorizontal[i]), cplex.prod(box.getLength(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))),
-                        cplex.sum(y[k], cplex.prod(M, cplex.sum(1, cplex.prod(-1, frontOf[i][k]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[k])))));
-            }
-        }
+        boxConstraints = addBoxOverlappingConstraints();
         
         //Comparing box constraints
-        for (int k = 0; k < n; k++) {
-            for (int i = 0; i < k; i++) {
-                cplex.addGe(cplex.sum(leftOf[i][k], frontOf[i][k]), cplex.sum(cplex.sum(P[i], P[k]), -1));
-                cplex.addLe(cplex.sum(leftOf[i][k], frontOf[i][k]), P[i]);
-                cplex.addLe(cplex.sum(leftOf[i][k], frontOf[i][k]), P[k]);
-            }
-        }
+        comparingConstraints = addComparingConstraints();
         
-        cplex.addLe(cplex.sum(P), n);
+        totalBoxConstraint = cplex.addLe(cplex.sum(P), n);
         
         //Lvl 3 Bin spatial constraints
-        for (int i = 0; i < n; i++) {
-            cplex.addLe(cplex.sum(x[i], cplex.prod(box.getLength(), isHorizontal[i]), cplex.prod(box.getWidth(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))), 
-                    cplex.sum(bin.getLength(), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i])))));
-            cplex.addLe(cplex.sum(y[i], cplex.prod(box.getWidth(), isHorizontal[i]), cplex.prod(box.getLength(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))), 
-                    cplex.sum(bin.getWidth(), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i])))));
-        }
+        binConstraints = addBinOverlappingConstraints();
         
         //Weight constraints
         IloLinearNumExpr XsumWeight = cplex.linearNumExpr();
         for (int i = 0; i < n; i++) {
             XsumWeight.addTerm(box.getWeight(), P[i]);
         }
-        cplex.addLe(XsumWeight, 30);
+        weightConstraint = cplex.addLe(XsumWeight, 30);
         
         if (cplex.solve()) {
             if (output) {
@@ -142,5 +131,77 @@ public class Solver {
             System.out.println("Solution not found.");
             return Integer.MAX_VALUE;
         }
+    }
+    
+    public void initVariables() throws IloException {
+        P = cplex.boolVarArray(n);
+
+        x = cplex.intVarArray(n, 0, Integer.MAX_VALUE); //x_i
+        y = cplex.intVarArray(n, 0, Integer.MAX_VALUE); //y_i
+        
+        leftOf = new IloIntVar[n][n]; //a_ik
+        frontOf = new IloIntVar[n][n]; //c_ik
+        
+        for (int i = 0; i < n; i++) {
+            leftOf[i] = cplex.boolVarArray(n);
+            frontOf[i] = cplex.boolVarArray(n);
+        }
+        
+        isHorizontal = cplex.boolVarArray(n); //l_xi
+    }
+    
+    private IloObjective defineObjective() throws IloException {
+        return cplex.addMaximize(cplex.sum(P));
+    }
+    
+    private IloConstraint[] addBoxOverlappingConstraints() throws IloException {
+        ArrayList<IloConstraint> constraints = new ArrayList<>(n * n * 2);
+        for (int i = 0; i < n; i++) {
+            for (int k = 0; k < n; k++) {
+                if (i == k) continue;
+                constraints.add(cplex.addLe(cplex.sum(x[i], cplex.prod(box.getLength(), isHorizontal[i]), cplex.prod(box.getWidth(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))),
+                        cplex.sum(x[k], cplex.prod(M, cplex.sum(1, cplex.prod(-1, leftOf[i][k]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[k]))))));
+                constraints.add(cplex.addLe(cplex.sum(y[i], cplex.prod(box.getWidth(), isHorizontal[i]), cplex.prod(box.getLength(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))),
+                        cplex.sum(y[k], cplex.prod(M, cplex.sum(1, cplex.prod(-1, frontOf[i][k]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[k]))))));
+            }
+        }
+        
+        return constraints.toArray(new IloConstraint[0]);
+    }
+    
+    private IloConstraint[] addComparingConstraints() throws IloException {
+        ArrayList<IloConstraint> constraints = new ArrayList<>((3 * n * (n+1)) / 2);
+        
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < k; i++) {
+                constraints.add(cplex.addGe(cplex.sum(leftOf[i][k], frontOf[i][k]), cplex.sum(cplex.sum(P[i], P[k]), -1)));
+                constraints.add(cplex.addLe(cplex.sum(leftOf[i][k], frontOf[i][k]), P[i]));
+                constraints.add(cplex.addLe(cplex.sum(leftOf[i][k], frontOf[i][k]), P[k]));
+            }
+        }
+        
+        return constraints.toArray(new IloConstraint[0]);
+    }
+    
+    private IloConstraint[] addBinOverlappingConstraints() throws IloException {
+        ArrayList<IloConstraint> constraints = new ArrayList<>(2 * n);
+        
+        for (int i = 0; i < n; i++) {
+            constraints.add(cplex.addLe(cplex.sum(x[i], cplex.prod(box.getLength(), isHorizontal[i]), cplex.prod(box.getWidth(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))), 
+                    cplex.sum(bin.getLength(), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))))));
+            constraints.add(cplex.addLe(cplex.sum(y[i], cplex.prod(box.getWidth(), isHorizontal[i]), cplex.prod(box.getLength(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))), 
+                    cplex.sum(bin.getWidth(), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))))));
+        }
+        
+        return constraints.toArray(new IloConstraint[0]);
+    }
+    
+    public void reset() throws IloException {
+        cplex.remove(objective);
+        cplex.remove(boxConstraints);
+        cplex.remove(comparingConstraints);
+        cplex.remove(totalBoxConstraint);
+        cplex.remove(binConstraints);
+        cplex.remove(weightConstraint);
     }
 }

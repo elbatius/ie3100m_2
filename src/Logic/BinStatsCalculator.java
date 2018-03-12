@@ -12,6 +12,7 @@ import ilog.concert.IloException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 /**
  * The class containing methods to determine the statistics for filling a Level 3 Bin full of Level 2 Boxes
@@ -19,20 +20,37 @@ import java.util.logging.Logger;
  */
 public class BinStatsCalculator {
     public static double MAX_WEIGHT = 30;
-    public static Solver solver = new Solver();
+    public static BinStats[] binStats;
+    public static Solver[] solvers;
     
     public void setWeight(double maxWeight) {
         MAX_WEIGHT = maxWeight;
+    }
+    
+    public static void initComponents(ArrayList<Level3_Bin> bins) throws IloException {
+        binStats = new BinStats[bins.size()];
+        solvers = new Solver[bins.size()];
+        
+        for (int i = 0; i < bins.size(); i++) {
+            binStats[i] = new BinStats(bins.get(i));
+            solvers[i] = new Solver(bins.get(i));
+        }
+    }
+    
+    public static void updateBox(Level2_Box box) {
+        for (BinStats binStat : binStats) {
+            binStat.updateBox(box);
+        }
     }
     
     /**
      * Sets the statistics for all the elements of a BinStats array.
      * @param allBinStats The array of BinStats whose attributes are to be calculated
      */
-    public static void setStatsForAllBins(ArrayList<BinStats> allBinStats) {
-        allBinStats.stream().forEach((binStats) -> {
+    public static void setStatsForAllBins() {
+        IntStream.range(0, solvers.length).forEach(i -> {
             try {
-                setStatsForBin(binStats);
+                setStatsForBin(binStats[i], solvers[i]);
             } catch (IloException ex) {
                 Logger.getLogger(BinStatsCalculator.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -46,19 +64,22 @@ public class BinStatsCalculator {
      * @param binStats the BinStats whose attributes are to be determined
      * @throws IloException 
      */
-    public static void setStatsForBin(BinStats binStats) throws IloException {
+    public static void setStatsForBin(BinStats binStats, Solver solver) throws IloException {
         Level2_Box box = binStats.getBox();
         Level3_Bin bin = binStats.getBin();
         
-        solver.update(box, calcUpperBound(box, bin), bin);
+        solver.update(box, calcUpperBound(box, bin));
         
         int quantityPerLayer = solver.optimize(false);
+        
         int totalQuantity = quantityPerLayer * (bin.getHeight() / box.getHeight());
         if (totalQuantity * box.getWeight() > MAX_WEIGHT) {
             totalQuantity = (int) (MAX_WEIGHT / box.getWeight());
         }
         
         binStats.setAttributes(quantityPerLayer, totalQuantity);
+        solver.reset();
+        
         return;
     }
     

@@ -12,7 +12,7 @@ import Model.Product.Level3_Bin;
  * The maximum amount of boxes that can be packed into the bin, and the free space remaining.
  */
 public class BinStats {
-    private final Level2_Box box;
+    private Level2_Box box;
     private final Level3_Bin bin;
     
     private int quantityPerLayer;
@@ -29,6 +29,10 @@ public class BinStats {
     public BinStats(Level3_Bin bin) {
         this.bin = bin;
         this.box = null;
+    }
+    
+    public void updateBox(Level2_Box box) {
+        this.box = box;
     }
     
     public Level2_Box getBox() {

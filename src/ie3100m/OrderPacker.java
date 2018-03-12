@@ -14,6 +14,7 @@ import Model.Order;
 import Model.Stats.PackingConfig;
 import Model.Stats.RankSystem;
 import Utils.BinScanner;
+import ilog.concert.IloException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,14 +43,15 @@ public class OrderPacker {
         
         try {
             binList = BinScanner.loadBinTypes("bins.csv");
+            BinStatsCalculator.initComponents(binList);
+            BinStatsCalculator.updateBox(box);
         } catch (IOException ex) {
             Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IloException ex) {
+            Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-        for (Level3_Bin bin : binList) {
-            allBinStats.add(new BinStats(box, bin));
-        }
-        BinStatsCalculator.setStatsForAllBins(allBinStats);
+        
+        BinStatsCalculator.setStatsForAllBins();
 
         for (BinStats binStat : allBinStats) {
             if (binStat.getTotalQuantity() > 0) {
