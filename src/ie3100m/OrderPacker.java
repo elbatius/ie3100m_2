@@ -92,13 +92,13 @@ public class OrderPacker {
             }
         });
 //        System.out.println("sorted 2 arrays by num and vol");
-        int rankPoints;
+        double rankPoints;
         ArrayList<RankSystem> rankBins = new ArrayList<>();
 
         for (int i = 0; i < binsByNumbers.size(); i++) {
             for (int j = 0; j < binsByVolume.size(); j++) {
                 if (binsByNumbers.get(i).getMainBinStats().getBin().getName() == binsByVolume.get(j).getMainBinStats().getBin().getName()) {
-                    rankPoints = i + j;
+                    rankPoints = (0.8*i) + (0.2*j);
                     RankSystem rank = new RankSystem(binsByVolume.get(j), i, j, rankPoints);
                     rankBins.add(rank);
                 }

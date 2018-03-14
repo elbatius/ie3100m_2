@@ -15,9 +15,9 @@ public class RankSystem implements Comparable<RankSystem> {
     private PackingConfig config;
     private int numRank;
     private int volRank;
-    private int rankPoints;
+    private double rankPoints;
     
-    public RankSystem (PackingConfig config, int numRank, int volRank, int rankPoints){
+    public RankSystem (PackingConfig config, int numRank, int volRank, double rankPoints){
         this.config = config;
         this.rankPoints = rankPoints;
         this.numRank = numRank;
@@ -36,7 +36,7 @@ public class RankSystem implements Comparable<RankSystem> {
         return this.config;
     }
     
-    public int getRankPoints(){
+    public double getRankPoints(){
         return this.rankPoints;
     }
     
@@ -53,7 +53,7 @@ public class RankSystem implements Comparable<RankSystem> {
         if (this.getRankPoints() == other.getRankPoints()) {
             return this.getConfig().getTotalBinsInclRemainder() - other.getConfig().getTotalBinsInclRemainder();
         } else {
-            return this.getRankPoints() - other.getRankPoints();
+            return (int) (this.getRankPoints() - other.getRankPoints());
         }
     }
     
