@@ -74,7 +74,7 @@ public class Main {
         for (Level3_Bin bin : binList) {
             binMap.put(bin.getName(), 0);
         }
-
+        
         for (PackingConfig packedConfig : orderPacks) {
             String key = packedConfig.getMainBinStats().getBin().getName();
             binMap.put(key, binMap.get(key) + 1);

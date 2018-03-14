@@ -98,7 +98,7 @@ public class OrderPacker {
         for (int i = 0; i < binsByNumbers.size(); i++) {
             for (int j = 0; j < binsByVolume.size(); j++) {
                 if (binsByNumbers.get(i).getMainBinStats().getBin().getName() == binsByVolume.get(j).getMainBinStats().getBin().getName()) {
-                    rankPoints = (0.8*i) + (0.2*j);
+                    rankPoints = (i) + (j);
                     RankSystem rank = new RankSystem(binsByVolume.get(j), i, j, rankPoints);
                     rankBins.add(rank);
                 }
