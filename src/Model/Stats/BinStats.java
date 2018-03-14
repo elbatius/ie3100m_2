@@ -33,6 +33,12 @@ public class BinStats {
     
     public void updateBox(Level2_Box box) {
         this.box = box;
+        
+        this.quantityPerLayer = 0;
+        this.totalQuantity = 0;
+        this.emptyVolume = 0;
+        this.useCount = 0;
+        this.utilizationRate = 0;
     }
     
     public Level2_Box getBox() {

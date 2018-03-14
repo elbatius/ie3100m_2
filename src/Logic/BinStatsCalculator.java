@@ -20,6 +20,7 @@ import java.util.stream.IntStream;
  */
 public class BinStatsCalculator {
     public static double MAX_WEIGHT = 30;
+    public static Level3_Bin[] bins;
     public static BinStats[] binStats;
     public static Solver[] solvers;
     
@@ -28,18 +29,19 @@ public class BinStatsCalculator {
     }
     
     public static void initComponents(ArrayList<Level3_Bin> bins) throws IloException {
-        binStats = new BinStats[bins.size()];
+        BinStatsCalculator.bins = bins.toArray(new Level3_Bin[0]);
         solvers = new Solver[bins.size()];
         
         for (int i = 0; i < bins.size(); i++) {
-            binStats[i] = new BinStats(bins.get(i));
             solvers[i] = new Solver(bins.get(i));
         }
     }
     
     public static void updateBox(Level2_Box box) {
-        for (BinStats binStat : binStats) {
-            binStat.updateBox(box);
+        binStats = new BinStats[bins.length];
+        for (int i = 0; i < bins.length; i++) {
+            binStats[i] = new BinStats(bins[i]);
+            binStats[i].updateBox(box);
         }
     }
     

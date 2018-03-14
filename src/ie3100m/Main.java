@@ -56,10 +56,14 @@ public class Main {
          */
         int j = 0;
         for (Order order : orderList) {
-            orderPacks.add(OrderPacker.packOrder(order));
+            PackingConfig bestConfig = OrderPacker.packOrder(order);
+            orderPacks.add(bestConfig);
+            //System.out.println(bestConfig);
             System.out.println(j);
             j++;
         }
+        
+        System.out.println("Done processing");
 
         HashMap<String, Integer> binMap = new HashMap<String, Integer>();
 
