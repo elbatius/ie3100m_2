@@ -20,6 +20,9 @@ import java.util.stream.IntStream;
  */
 public class BinStatsCalculator {
     public static double MAX_WEIGHT = 30;
+    public static int buffer;
+    public static boolean bufferBothSides;
+    
     public static Level3_Bin[] bins;
     public static BinStats[] binStats;
     public static Solver[] solvers;
@@ -28,12 +31,28 @@ public class BinStatsCalculator {
         MAX_WEIGHT = maxWeight;
     }
     
+    public static void setBuffer(int buffer) {
+        BinStatsCalculator.buffer = buffer;
+    }
+    
+    public static int getBuffer() {
+        return BinStatsCalculator.buffer;
+    }
+    
+    public static void setBufferBothSides(boolean bufferBothSides) {
+        BinStatsCalculator.bufferBothSides = bufferBothSides;
+    }
+    
+    public static boolean getBufferBothSides() {
+        return BinStatsCalculator.bufferBothSides;
+    }
+    
     public static void initComponents(ArrayList<Level3_Bin> bins) throws IloException {
         BinStatsCalculator.bins = bins.toArray(new Level3_Bin[0]);
         solvers = new Solver[bins.size()];
         
         for (int i = 0; i < bins.size(); i++) {
-            solvers[i] = new Solver(bins.get(i));
+            solvers[i] = new Solver(bins.get(i), buffer, bufferBothSides);
         }
     }
     
@@ -74,12 +93,12 @@ public class BinStatsCalculator {
         
         int quantityPerLayer = solver.optimize(false);
         
-        int totalQuantity = quantityPerLayer * (bin.getHeight() / box.getHeight());
+        int totalQuantity = bufferBothSides ? quantityPerLayer * ((bin.getHeight() - 2 * buffer) / box.getHeight()) : quantityPerLayer * ((bin.getHeight() - buffer) / box.getHeight());
         if (totalQuantity * box.getWeight() > MAX_WEIGHT) {
             totalQuantity = (int) (MAX_WEIGHT / box.getWeight());
         }
         
-        binStats.setAttributes(quantityPerLayer, totalQuantity);
+        binStats.setAttributes(quantityPerLayer, totalQuantity, buffer, bufferBothSides);
         solver.reset();
         
         return;

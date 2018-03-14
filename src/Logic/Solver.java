@@ -33,6 +33,9 @@ public class Solver {
     private int boxVolume;
     private int binVolumes;
     
+    private int buffer;
+    private boolean bufferBothSides;
+    
     //variables
     private IloIntVar[] P;
 
@@ -63,21 +66,25 @@ public class Solver {
         }
     }
     
-    public Solver(Level2_Box box, int n, Level3_Bin bin) throws IloException {
+    public Solver(Level2_Box box, int n, Level3_Bin bin, int buffer, boolean bufferBothSides) throws IloException {
         this.cplex = new IloCplex();
         
         this.box = box;
         this.bin = bin;
         this.n = n;
+        this.buffer = buffer;
+        this.bufferBothSides = bufferBothSides;
         
         this.boxVolume = box.getVolume();
         this.binVolumes = bin.getVolume();
     }
     
-    public Solver(Level3_Bin bin) throws IloException {
+    public Solver(Level3_Bin bin, int buffer, boolean bufferBothSides) throws IloException {
         this.cplex = new IloCplex();
         
         this.bin = bin;
+        this.buffer = buffer;
+        this.bufferBothSides = bufferBothSides;
         
         this.binVolumes = bin.getVolume();
     }
@@ -117,7 +124,7 @@ public class Solver {
         
         if (cplex.solve()) {
             if (output) {
-                System.out.println("Free Space: " + (bin.getVolume() - box.getVolume() * cplex.getObjValue()));
+                System.out.println("Free Space: " + (bin.getTrimmedVolume(buffer, bufferBothSides)- box.getVolume() * cplex.getObjValue()));
                 System.out.println("Number of boxes: " + cplex.getObjValue());
 
                 for (int i = 0; i < n; i++) {
@@ -136,8 +143,13 @@ public class Solver {
     public void initVariables() throws IloException {
         P = cplex.boolVarArray(n);
 
-        x = cplex.intVarArray(n, 0, Integer.MAX_VALUE); //x_i
-        y = cplex.intVarArray(n, 0, Integer.MAX_VALUE); //y_i
+        if (bufferBothSides) {
+            x = cplex.intVarArray(n, buffer, Integer.MAX_VALUE);
+            y = cplex.intVarArray(n, buffer, Integer.MAX_VALUE);
+        } else {
+            x = cplex.intVarArray(n, 0, Integer.MAX_VALUE);
+            y = cplex.intVarArray(n, 0, Integer.MAX_VALUE);
+        }
         
         leftOf = new IloIntVar[n][n]; //a_ik
         frontOf = new IloIntVar[n][n]; //c_ik
@@ -188,9 +200,9 @@ public class Solver {
         
         for (int i = 0; i < n; i++) {
             constraints.add(cplex.addLe(cplex.sum(x[i], cplex.prod(box.getLength(), isHorizontal[i]), cplex.prod(box.getWidth(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))), 
-                    cplex.sum(bin.getLength(), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))))));
+                    cplex.sum(bin.getLength() - buffer, cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))))));
             constraints.add(cplex.addLe(cplex.sum(y[i], cplex.prod(box.getWidth(), isHorizontal[i]), cplex.prod(box.getLength(), cplex.sum(1, cplex.prod(-1, isHorizontal[i])))), 
-                    cplex.sum(bin.getWidth(), cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))))));
+                    cplex.sum(bin.getWidth() - buffer, cplex.prod(M, cplex.sum(1, cplex.prod(-1, P[i]))))));
         }
         
         return constraints.toArray(new IloConstraint[0]);
