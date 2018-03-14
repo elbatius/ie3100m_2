@@ -30,7 +30,7 @@ public class Main {
 
         ArrayList<Order> orderList = new ArrayList<>();
         try {
-            orderList = OrderScanner.loadOrders("orders.csv");
+            orderList = OrderScanner.loadOrders(".\\orders.csv");
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -41,7 +41,7 @@ public class Main {
         ArrayList<Level3_Bin> binList = new ArrayList<>();
 
         try {
-            binList = BinScanner.loadBinTypes("bins.csv");
+            binList = BinScanner.loadBinTypes(".\\bins.csv");
             BinStatsCalculator.initComponents(binList);
         } catch (IOException ex) {
             Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
@@ -55,6 +55,7 @@ public class Main {
         orderPacks have configured packs inside. Version 2
          */
         int j = 0;
+        System.out.println("waiting to go in");
         for (Order order : orderList) {
             PackingConfig bestConfig = OrderPacker.packOrder(order);
             orderPacks.add(bestConfig);
@@ -63,7 +64,6 @@ public class Main {
             j++;
         }
         
-        System.out.println("Done processing");
 
         HashMap<String, Integer> binMap = new HashMap<String, Integer>();
 

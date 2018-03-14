@@ -22,6 +22,7 @@ public class ConfigWriter {
         FileWriter writer = new FileWriter(csvFile);
 
         List<String> header = new ArrayList<>();
+        header.add("Order Num");
         header.add("Order Quantity");
         header.add("Box Dimensions");
         header.add("Main Bin");
@@ -31,11 +32,12 @@ public class ConfigWriter {
         header.add("Empty Vol");
         header.add("Last Bin");
         header.add("Remainder boxes");
-
+        
         CSVUtils.writeLine(writer, header);
-
+        
         for (PackingConfig config : orderPacks) {
             List<String> list = new ArrayList<>();
+            list.add(config.getOrder().getBox().getName());
             list.add(String.valueOf(config.getOrder().getQuantity()));
             list.add(config.getOrder().getBox().getDimensions());
             list.add(config.getMainBinStats().getBin().getFullName());

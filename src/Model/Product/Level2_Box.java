@@ -24,7 +24,7 @@ public class Level2_Box {
         this.name = "";
     }
     
-    public Level2_Box(String name, int height, int length, int width, double weight){
+    public Level2_Box(String name, int length, int width, int height, double weight){
         this.length = length;
         this.width = width;
         this.height = height;
