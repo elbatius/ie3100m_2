@@ -25,6 +25,8 @@ import java.util.logging.Logger;
  * @author elbat
  */
 public class Main {
+    private static int buffer = 0;
+    private static boolean bufferBothSides = false;
 
     public static void main(String[] args) {
 
@@ -56,6 +58,8 @@ public class Main {
          */
         int j = 0;
         System.out.println("waiting to go in");
+        BinStatsCalculator.setBuffer(buffer);
+        BinStatsCalculator.setBufferBothSides(bufferBothSides);
         for (Order order : orderList) {
             PackingConfig bestConfig = OrderPacker.packOrder(order);
             orderPacks.add(bestConfig);
