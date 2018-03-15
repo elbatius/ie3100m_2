@@ -44,6 +44,8 @@ public class Main {
 
         try {
             binList = BinScanner.loadBinTypes(".\\bins.csv");
+            BinStatsCalculator.setBuffer(buffer);
+            BinStatsCalculator.setBufferBothSides(bufferBothSides);
             BinStatsCalculator.initComponents(binList);
         } catch (IOException ex) {
             Logger.getLogger(OrderPacker.class.getName()).log(Level.SEVERE, null, ex);
@@ -58,8 +60,6 @@ public class Main {
          */
         int j = 0;
         System.out.println("waiting to go in");
-        BinStatsCalculator.setBuffer(buffer);
-        BinStatsCalculator.setBufferBothSides(bufferBothSides);
         for (Order order : orderList) {
             PackingConfig bestConfig = OrderPacker.packOrder(order);
             orderPacks.add(bestConfig);
