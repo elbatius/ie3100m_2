@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 public class OrderPacker {
 
     public static final double MAX_WEIGHT = 30;
+    public static final double numCoeff = 0.5;
+    public static final double volCoeff = 0.5;
 
     public static PackingConfig packOrder(Order order) {
         /**
@@ -55,7 +57,7 @@ public class OrderPacker {
         }
         PackingConfigCalculator.setAllConfigs(configs, allBinStats);
 
-        PackingConfig bestConfig = determineBestConfig(configs, 0.5, 0.5);
+        PackingConfig bestConfig = determineBestConfig(configs, numCoeff, volCoeff);
 
 //        if (bestConfig == null) {
 //            System.out.println("No suitable config found");
