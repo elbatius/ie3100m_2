@@ -5,6 +5,7 @@
  */
 package ie3100m;
 
+import Logic.BinDimOptimizer;
 import Logic.BinStatsCalculator;
 import Model.Order;
 import Model.Product.Level3_Bin;
@@ -112,6 +113,10 @@ public class Main {
 //            System.out.println("count for " + binName + ": " + count);
             System.out.println("utilization rate for " + binName + ": " + rate);
         }
+        
+        BinDimOptimizer binDimOpti = new BinDimOptimizer(binList, orderPacks, binMap);
+        
+        binDimOpti.optimizeHeight();
 
     }
 }

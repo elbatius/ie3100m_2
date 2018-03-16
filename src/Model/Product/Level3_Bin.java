@@ -14,7 +14,7 @@ import java.text.DecimalFormat;
 public class Level3_Bin {
     private final int length;
     private final int width;
-    private final int height;
+    private int height;
     private final String name;
 
     public Level3_Bin(int length, int width, int height) {
@@ -29,6 +29,10 @@ public class Level3_Bin {
         this.length = length;
         this.width = width;
         this.height = height;
+    }
+    
+    public void setHeight(int newHeight){
+        this.height = newHeight;
     }
 
     public int getLength() {
