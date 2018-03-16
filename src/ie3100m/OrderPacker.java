@@ -112,7 +112,9 @@ public class OrderPacker {
 //            System.out.println(rank.toString());
 //        }
         for (RankSystem rank : rankBins) {
-            if (rank.getConfig().getMainBinStats().getTotalQuantity() != 1) {
+            if (rank.getConfig().getOrder().getQuantity() == 1) {
+                return rank.getConfig();
+            } else if (rank.getConfig().getMainBinStats().getTotalQuantity() != 1) {
                 return rank.getConfig();
             }            
         }
