@@ -11,6 +11,7 @@ import Model.Stats.BinStats;
 import Model.Product.Level2_Box;
 import Model.Product.Level3_Bin;
 import Model.Order;
+import Model.Stats.ConfigObjective;
 import Model.Stats.PackingConfig;
 import Model.Stats.RankSystem;
 import Utils.BinScanner;
@@ -53,11 +54,8 @@ public class OrderPacker {
             }
         }
         PackingConfigCalculator.setAllConfigs(configs, allBinStats);
-        
-        ArrayList<PackingConfig> binsByNumbers = new ArrayList<>(configs);
-        ArrayList<PackingConfig> binsByVolume = new ArrayList<>(configs);
 
-        PackingConfig bestConfig = determineBestConfig(binsByNumbers, binsByVolume);
+        PackingConfig bestConfig = determineBestConfig(configs, 0.5, 0.5);
 
 //        if (bestConfig == null) {
 //            System.out.println("No suitable config found");
@@ -69,55 +67,37 @@ public class OrderPacker {
     }
 
     /**
-     * Determine the best packing configuration based on the sorting order
+     * Determine the best packing configuration based on the objectives
      *
      * @param packingConfigs the array of possible packing configurations
+     * @param numCoeff coefficient for number of bins in the configuration
+     * @param volCoeff coefficient for the empty volume in the configuration
      * @return the most desired packing configuration
-     */
-    private static PackingConfig determineBestConfig(ArrayList<PackingConfig> binsByNumbers, ArrayList<PackingConfig> binsByVolume) {
-//        System.out.println("testing inside determine");
-        Collections.sort(binsByNumbers, (a, b) -> {
-            if (a.getTotalBinsInclRemainder() == b.getTotalBinsInclRemainder()) {
-                return a.getTotalEmptyVol() <= b.getTotalEmptyVol() ? -1 : 1;
-            } else {
-                return a.getTotalBinsInclRemainder() - b.getTotalBinsInclRemainder();
-            }
-        });
-
-        Collections.sort(binsByVolume, (a, b) -> {
-            if (a.getMainBinStats().getEmptyVolume() == b.getMainBinStats().getEmptyVolume()) {
-                return a.getTotalBinsInclRemainder() <= b.getTotalBinsInclRemainder() ? -1 : 1;
-            } else {
-                return a.getMainBinStats().getEmptyVolume() - b.getMainBinStats().getEmptyVolume();
-            }
-        });
-//        System.out.println("sorted 2 arrays by num and vol");
-        double rankPoints;
-        ArrayList<RankSystem> rankBins = new ArrayList<>();
-
-        for (int i = 0; i < binsByNumbers.size(); i++) {
-            for (int j = 0; j < binsByVolume.size(); j++) {
-                if (binsByNumbers.get(i).getMainBinStats().getBin().getName() == binsByVolume.get(j).getMainBinStats().getBin().getName()) {
-                    rankPoints = (i) + (j);
-                    RankSystem rank = new RankSystem(binsByVolume.get(j), i, j, rankPoints);
-                    rankBins.add(rank);
-                }
-            }
-
+     */    
+    private static PackingConfig determineBestConfig(ArrayList<PackingConfig> configs, double numCoeff, double volCoeff) {
+        ArrayList<ConfigObjective> configObjectives = new ArrayList<>();
+        int minNum = Integer.MAX_VALUE;
+        long minVol = Long.MAX_VALUE;
+        
+        for (PackingConfig config : configs) {
+            minNum = Math.min(minNum, config.getTotalBinsInclRemainder());
+            minVol = Math.min(minVol, config.getTotalEmptyVol());
         }
-        Collections.sort(rankBins);
         
+        for (PackingConfig config : configs) {
+            configObjectives.add(new ConfigObjective(config, (numCoeff * minNum / config.getTotalBinsInclRemainder()) + (volCoeff * minVol / config.getTotalEmptyVol())));
+        }
         
-//        for (RankSystem rank : rankBins) {
-//            System.out.println(rank.toString());
-//        }
-        for (RankSystem rank : rankBins) {
-            if (rank.getConfig().getOrder().getQuantity() == 1) {
-                return rank.getConfig();
-            } else if (rank.getConfig().getMainBinStats().getTotalQuantity() != 1) {
-                return rank.getConfig();
+        Collections.sort(configObjectives);
+        
+        for (ConfigObjective configObjective : configObjectives) {
+            if (configObjective.getConfig().getOrder().getQuantity() == 1) {
+                return configObjective.getConfig();
+            } else if (configObjective.getConfig().getMainBinStats().getTotalQuantity() != 1) {
+                return configObjective.getConfig();
             }            
         }
+        
         return null;
     }
 
