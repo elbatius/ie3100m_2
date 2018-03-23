@@ -30,8 +30,8 @@ import java.util.logging.Logger;
 public class OrderPacker {
 
     public static final double MAX_WEIGHT = 30;
-    public static final double numCoeff = 0.5;
-    public static final double volCoeff = 0.5;
+    public static final double numCoeff = 0.25;
+    public static final double volCoeff = 0.75;
 
     public static PackingConfig packOrder(Order order) {
         /**

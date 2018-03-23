@@ -29,7 +29,8 @@ public class ConfigWriter {
         header.add("Main Bin Dimensions");
         header.add("Main Bin Qty");
         header.add("Boxes per Bin");
-        header.add("Empty Vol");
+        header.add("Empty Volume per Bin");
+        header.add("Total Empty Vol");
         header.add("Last Bin");
         header.add("Remainder boxes");
         
@@ -45,6 +46,7 @@ public class ConfigWriter {
             list.add(String.valueOf(config.getTotalBins()));
             list.add(String.valueOf(config.getMainBinStats().getTotalQuantity()));
             list.add(String.valueOf(config.getMainBinStats().getEmptyVolume()));
+            list.add(String.valueOf(config.getTotalEmptyVol()));
             if (config.getLastBin() == null || config.getRemainderBoxes() == 0) {
                 list.add("No remainder bin required");
                 list.add(String.valueOf(0));

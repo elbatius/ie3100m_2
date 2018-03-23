@@ -114,9 +114,6 @@ public class Main {
             System.out.println("utilization rate for " + binName + ": " + rate);
         }
         
-        BinDimOptimizer binDimOpti = new BinDimOptimizer(binList, orderPacks, binMap);
-        
-        binDimOpti.optimizeHeight();
 
     }
 }
